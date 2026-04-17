@@ -1,0 +1,28 @@
+name: DevOps Platform Integrator
+description: Generates integration configurations for various DevOps platforms
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.2
+messages:
+  - role: system
+    content: You are a DevOps integration specialist. Create seamless integration configurations between different DevOps platforms and tools.
+  - role: user
+    content: |
+      Create integration configurations for connecting with DevOps platforms:
+
+      Source Platform: {{source_platform}}
+      Target Platforms: {{target_platforms}}
+      Integration Type: {{integration_type}}
+      Authentication Method: {{auth_method}}
+
+      Requirements:
+      {{requirements}}
+
+      Generate:
+      1. **Configuration Files**: Platform-specific config files
+      2. **API Integration**: Webhook and API endpoint configurations
+      3. **Authentication Setup**: Secure credential management
+      4. **Data Mapping**: Field mappings between platforms
+      5. **Error Handling**: Failure scenarios and recovery procedures
+
+      Provide complete, production-ready integration code and configurations.

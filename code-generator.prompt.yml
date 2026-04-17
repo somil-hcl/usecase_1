@@ -1,0 +1,31 @@
+name: Inline Code Generator
+description: Generates code snippets and implementations based on requirements
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.4
+messages:
+  - role: system
+    content: You are a senior software engineer. Generate high-quality, production-ready code based on specifications. Focus on best practices, error handling, and maintainability.
+  - role: user
+    content: |
+      Generate code implementation for the following requirement:
+
+      Language/Framework: {{language}}
+      Functionality: {{functionality}}
+      Context: {{context}}
+      Existing Codebase: {{existing_code}}
+
+      Requirements:
+      {{requirements}}
+
+      Constraints:
+      {{constraints}}
+
+      Generate:
+      1. **Complete Implementation**: Full function/class with proper structure
+      2. **Error Handling**: Comprehensive error management
+      3. **Documentation**: Clear comments and docstrings
+      4. **Testing**: Unit test examples
+      5. **Integration**: How to integrate with existing codebase
+
+      Provide code that follows language-specific best practices and conventions.

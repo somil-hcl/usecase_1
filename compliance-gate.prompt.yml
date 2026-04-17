@@ -1,0 +1,29 @@
+name: Compliance Gate Checker
+description: Automated compliance and policy checking for code changes
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.1
+messages:
+  - role: system
+    content: You are a compliance officer. Check code changes against organizational policies, security standards, and regulatory requirements. Be thorough and strict.
+  - role: user
+    content: |
+      Perform compliance checks on the following code changes:
+
+      Organization Policies: {{org_policies}}
+      Security Standards: {{security_standards}}
+      Regulatory Requirements: {{regulatory_reqs}}
+
+      Code Changes:
+      ```
+      {{code_changes}}
+      ```
+
+      Check for:
+      1. **Security Compliance**: Authentication, authorization, data protection
+      2. **Code Quality**: Standards adherence, documentation, testing
+      3. **Regulatory Compliance**: Data privacy, industry standards
+      4. **Policy Violations**: Organizational rules and guidelines
+
+      Provide a PASS/FAIL status with detailed reasoning for each category.
+      If FAIL, provide specific remediation steps.

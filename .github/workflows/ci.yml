@@ -1,12 +1,21 @@
-name: CI
+name: PR Lifecycle & Automated Checks
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+  models: read
 
 jobs:
+  # Basic CI for pushes
   test:
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
@@ -18,17 +27,208 @@ jobs:
       - run: npm ci
       - run: npm test
 
-  codeql:
+  # Comprehensive PR checks
+  pr-checks:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
+    outputs:
+      compliance-status: ${{ steps.compliance.outputs.status }}
+      security-status: ${{ steps.security.outputs.status }}
     steps:
       - uses: actions/checkout@v4
-      - uses: github/codeql-action/init@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: CodeQL Security Scan
+        uses: github/codeql-action/init@v3
         with:
           languages: javascript
-      - uses: github/codeql-action/autobuild@v3
-      - uses: github/codeql-action/analyze@v3
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+      - name: Compliance Gate Check
+        id: compliance
+        run: |
+          echo "Running compliance checks..."
+          # Check for required files
+          if [ ! -f "package.json" ]; then
+            echo "❌ Missing package.json"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Check for tests
+          if [ ! -d "__tests__" ]; then
+            echo "❌ Missing test directory"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          # Check test coverage (basic)
+          TEST_COUNT=$(find __tests__ -name "*.test.js" | wc -l)
+          if [ "$TEST_COUNT" -lt 1 ]; then
+            echo "❌ Insufficient test coverage"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ All compliance checks passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+
+      - name: Security Compliance Check
+        id: security
+        run: |
+          echo "Running security compliance checks..."
+          # Check for security vulnerabilities
+          npm audit --audit-level moderate
+          if [ $? -ne 0 ]; then
+            echo "❌ Security vulnerabilities found"
+            echo "status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+          echo "✅ Security checks passed"
+          echo "status=passed" >> $GITHUB_OUTPUT
+
+  # AI-Assisted PR Review
+  ai-pr-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: pr-checks
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate PR Summary & Review
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get PR details
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Get diff
+          DIFF=$(gh pr diff $PR_NUMBER --repo ${{ github.repository }})
+
+          # Call AI for PR review
+          RESPONSE=$(curl -s "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d "{
+              \"messages\": [
+                {
+                  \"role\": \"system\",
+                  \"content\": \"You are an expert code reviewer. Provide a concise, structured PR review focusing on code quality, security, and best practices.\"
+                },
+                {
+                  \"role\": \"user\",
+                  \"content\": \"Review this PR:\\nTitle: $PR_TITLE\\nDescription: $PR_BODY\\n\\nDiff:\\n$DIFF\\n\\nProvide a structured review with sections for Summary, Code Quality, Security, and Recommendations.\"
+                }
+              ],
+              \"model\": \"openai/gpt-4o\"
+            }")
+
+          # Extract review from response
+          REVIEW=$(echo $RESPONSE | jq -r '.choices[0].message.content')
+
+          # Post review comment
+          gh pr comment $PR_NUMBER --repo ${{ github.repository }} --body "$REVIEW"
+
+  # Pipeline Authoring Assistant
+  pipeline-assistant:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.body, 'pipeline')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: AI Pipeline Authoring
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Extract pipeline requirements from PR description
+          RESPONSE=$(curl -s "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d "{
+              \"messages\": [
+                {
+                  \"role\": \"system\",
+                  \"content\": \"You are a CI/CD pipeline expert. Generate GitHub Actions workflows based on project requirements.\"
+                },
+                {
+                  \"role\": \"user\",
+                  \"content\": \"Generate a GitHub Actions workflow for this project based on: $PR_BODY\"
+                }
+              ],
+              \"model\": \"openai/gpt-4o\"
+            }")
+
+          PIPELINE_SUGGESTION=$(echo $RESPONSE | jq -r '.choices[0].message.content')
+
+          # Comment with pipeline suggestion
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} \
+            --body "## 🤖 AI Pipeline Suggestion\\n\\n$PIPELINE_SUGGESTION"
+
+  # Test Generation Assistant
+  test-generator:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.body, 'test')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get changed files
+          CHANGED_FILES=$(gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --name-only)
+
+          for file in $CHANGED_FILES; do
+            if [[ $file == *.js && ! $file == __tests__/* ]]; then
+              # Read file content
+              FILE_CONTENT=$(cat $file)
+
+              # Generate tests
+              RESPONSE=$(curl -s "https://models.github.ai/inference/chat/completions" \
+                -H "Content-Type: application/json" \
+                -H "Authorization: Bearer $GITHUB_TOKEN" \
+                -d "{
+                  \"messages\": [
+                    {
+                      \"role\": \"system\",
+                      \"content\": \"You are a testing expert. Generate comprehensive unit tests for JavaScript code.\"
+                    },
+                    {
+                      \"role\": \"user\",
+                      \"content\": \"Generate Jest unit tests for this JavaScript code:\\n\\n$FILE_CONTENT\"
+                    }
+                  ],
+                  \"model\": \"openai/gpt-4o\"
+                }")
+
+              TEST_SUGGESTION=$(echo $RESPONSE | jq -r '.choices[0].message.content')
+
+              # Comment with test suggestions
+              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} \
+                --body "## 🧪 AI Test Generation for $file\\n\\n\`\`\`javascript\\n$TEST_SUGGESTION\\n\`\`\`"
+            fi
+          done

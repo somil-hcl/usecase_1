@@ -1,17 +1,33 @@
-name: Text Summarizer
-description: Summarizes input text concisely
-model: openai/gpt-4o-mini
+name: PR Summary Generator
+description: Generates contextual summaries for pull requests
+model: openai/gpt-4o
 modelParameters:
-  temperature: 0.5
+  temperature: 0.3
 messages:
   - role: system
-    content: You are a text summarizer. Your only job is to summarize text given to you.
+    content: You are a technical writer specializing in creating clear, concise PR summaries. Focus on what changed, why it matters, and any important considerations for reviewers.
   - role: user
     content: |
-      Summarize the given text, beginning with "Summary -":
-      <text>
-      {{input}}
-      </text>
+      Generate a comprehensive PR summary based on the following information:
+
+      PR Title: {{pr_title}}
+      PR Description: {{pr_description}}
+      Author: {{pr_author}}
+      Changed Files: {{changed_files}}
+
+      Diff Summary:
+      ```
+      {{pr_diff}}
+      ```
+
+      Create a summary that includes:
+      1. **Overview**: What this PR does in 1-2 sentences
+      2. **Key Changes**: Bullet points of major modifications
+      3. **Impact**: Who this affects and potential risks
+      4. **Testing**: How this was tested
+      5. **Breaking Changes**: Any breaking changes (if applicable)
+
+      Format the response as a well-structured markdown summary.
 testData:
   - input: |
       The quick brown fox jumped over the lazy dog.

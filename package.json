@@ -4,7 +4,8 @@
   "description": "AI-powered automation for PR Review, Issue Classification, and SAST",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "integrate": "node devops-integrator.js"
   },
   "keywords": [],
   "author": "",
