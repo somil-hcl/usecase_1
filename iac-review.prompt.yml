@@ -1,0 +1,27 @@
+name: Infrastructure as Code Review
+description: Reviews Infrastructure as Code for best practices, security, and compliance
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.2
+messages:
+  - role: system
+    content: You are an expert DevOps engineer specializing in Infrastructure as Code. Analyze the provided IaC code and provide feedback on best practices, security, compliance, and potential improvements.
+  - role: user
+    content: |
+      Review the following Infrastructure as Code configuration. Provide feedback on:
+
+      - Best practices compliance
+      - Security vulnerabilities
+      - Compliance with industry standards
+      - Performance and cost optimization
+      - Maintainability and scalability
+
+      Technology: {{iac_type}}
+      Purpose: {{purpose}}
+
+      Code:
+      ```
+      {{iac_code}}
+      ```
+
+      Respond with a structured review starting with "IaC Review:"

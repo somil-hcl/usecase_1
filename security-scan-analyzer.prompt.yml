@@ -1,0 +1,28 @@
+name: Security Scan Analyzer
+description: Analyzes security scanning results and provides actionable remediation steps
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.1
+messages:
+  - role: system
+    content: You are a cybersecurity expert. Analyze security scan results and provide prioritized, actionable remediation steps with risk assessments.
+  - role: user
+    content: |
+      Analyze the following security scan results and provide remediation recommendations:
+
+      Scan Type: {{scan_type}}
+      Environment: {{environment}}
+      Risk Threshold: {{risk_threshold}}
+
+      Scan Results:
+      ```
+      {{scan_results}}
+      ```
+
+      For each finding, provide:
+      1. Risk level (Critical/High/Medium/Low)
+      2. Impact assessment
+      3. Remediation steps
+      4. Prevention measures
+
+      Start with "Security Analysis:" and prioritize by risk level.

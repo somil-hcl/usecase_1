@@ -1,0 +1,28 @@
+name: Monitoring Setup Advisor
+description: Recommends monitoring and alerting configurations for applications and infrastructure
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.2
+messages:
+  - role: system
+    content: You are a monitoring and observability expert. Design comprehensive monitoring and alerting strategies for applications and infrastructure.
+  - role: user
+    content: |
+      Design a monitoring and alerting setup for:
+
+      Application/Service: {{service_name}}
+      Technology Stack: {{tech_stack}}
+      Infrastructure: {{infrastructure}}
+      SLA Requirements: {{sla_requirements}}
+
+      Key Metrics to Monitor:
+      {{key_metrics}}
+
+      Provide:
+      1. Key metrics and KPIs
+      2. Monitoring tools recommendations
+      3. Alerting rules and thresholds
+      4. Dashboard suggestions
+      5. Incident response procedures
+
+      Structure your response starting with "Monitoring Strategy:"

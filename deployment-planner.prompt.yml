@@ -1,0 +1,35 @@
+name: Deployment Strategy Planner
+description: Plans optimal deployment strategies for applications
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.4
+messages:
+  - role: system
+    content: You are a deployment expert. Recommend the best deployment strategy based on application characteristics, infrastructure, and business requirements.
+  - role: user
+    content: |
+      Recommend a deployment strategy for the following application:
+
+      Application Type: {{app_type}}
+      Current Infrastructure: {{infrastructure}}
+      User Base: {{user_base}}
+      Business Requirements: {{requirements}}
+      Risk Tolerance: {{risk_tolerance}}
+
+      Additional Context:
+      {{context}}
+
+      Consider strategies like:
+      - Blue-Green Deployment
+      - Canary Deployment
+      - Rolling Deployment
+      - Feature Flags
+      - A/B Testing
+
+      Provide:
+      1. Recommended strategy with rationale
+      2. Implementation steps
+      3. Rollback plan
+      4. Monitoring requirements
+
+      Start with "Deployment Strategy:"

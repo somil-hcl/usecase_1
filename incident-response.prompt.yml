@@ -1,0 +1,27 @@
+name: Incident Response Planner
+description: Creates incident response plans and runbooks for common scenarios
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.1
+messages:
+  - role: system
+    content: You are an incident response expert. Create detailed runbooks and response plans for system incidents and outages.
+  - role: user
+    content: |
+      Create an incident response plan for:
+
+      Incident Type: {{incident_type}}
+      System/Service: {{system_name}}
+      Impact Level: {{impact_level}}
+      Team Structure: {{team_structure}}
+
+      Include:
+      1. Detection methods
+      2. Initial assessment steps
+      3. Escalation procedures
+      4. Communication plan
+      5. Recovery steps
+      6. Post-incident analysis
+      7. Prevention measures
+
+      Format as a structured runbook starting with "Incident Response Plan:"

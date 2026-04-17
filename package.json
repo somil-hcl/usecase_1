@@ -1,0 +1,15 @@
+{
+  "name": "usecase-1",
+  "version": "1.0.0",
+  "description": "AI-powered automation for PR Review, Issue Classification, and SAST",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

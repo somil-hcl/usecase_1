@@ -1,0 +1,29 @@
+name: CI/CD Pipeline Optimizer
+description: Analyzes and optimizes CI/CD pipeline configurations
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.3
+messages:
+  - role: system
+    content: You are a CI/CD expert. Analyze pipeline configurations and provide optimization recommendations for performance, reliability, and maintainability.
+  - role: user
+    content: |
+      Analyze the following CI/CD pipeline configuration and provide optimization recommendations:
+
+      Current Issues: {{issues}}
+      Technology Stack: {{tech_stack}}
+      Team Size: {{team_size}}
+
+      Pipeline Configuration:
+      ```
+      {{pipeline_config}}
+      ```
+
+      Focus on:
+      - Build time reduction
+      - Reliability improvements
+      - Security enhancements
+      - Cost optimization
+      - Maintainability
+
+      Respond with "Pipeline Optimization:" followed by prioritized recommendations.
