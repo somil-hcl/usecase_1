@@ -1,0 +1,26 @@
+name: PR Review Assistant
+description: Reviews pull requests for code quality, security, and best practices
+model: openai/gpt-4o
+modelParameters:
+  temperature: 0.3
+messages:
+  - role: system
+    content: You are an expert code reviewer. Analyze the provided pull request diff and provide constructive feedback on code quality, potential bugs, security issues, and adherence to best practices. Be concise but thorough.
+  - role: user
+    content: |
+      Review the following pull request diff. Provide feedback on:
+      - Code quality and readability
+      - Potential bugs or issues
+      - Security vulnerabilities
+      - Best practices compliance
+      - Suggestions for improvement
+
+      Pull Request Title: {{pr_title}}
+      Pull Request Description: {{pr_description}}
+
+      Diff:
+      ```
+      {{pr_diff}}
+      ```
+
+      Respond with a structured review starting with "PR Review:"
