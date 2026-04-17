@@ -17,16 +17,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get PR details
-        id: pr
         run: |
-          gh pr view ${{ github.event.pull_request.number }} --json title,body --jq '"PR_TITLE=\(.title)\nPR_DESCRIPTION=\(.body)"' >> $GITHUB_ENV
+          gh pr view ${{ github.event.pull_request.number }} --json title --jq .title > pr_title.txt
+          gh pr view ${{ github.event.pull_request.number }} --json body --jq .body > pr_description.txt
           gh pr diff ${{ github.event.pull_request.number }} > pr_diff.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: AI PR Review
         run: |
-          jq -n --arg title "$PR_TITLE" --arg desc "$PR_DESCRIPTION" --rawfile diff pr_diff.txt '{
+          TITLE=$(cat pr_title.txt)
+          DESC=$(cat pr_description.txt)
+          jq -n --arg title "$TITLE" --arg desc "$DESC" --rawfile diff pr_diff.txt '{
             messages: [
               {
                 role: "system",
@@ -53,5 +55,3 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_TITLE: ${{ env.PR_TITLE }}
-          PR_DESCRIPTION: ${{ env.PR_DESCRIPTION }}
