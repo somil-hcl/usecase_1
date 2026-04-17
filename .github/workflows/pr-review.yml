@@ -1,0 +1,57 @@
+name: PR Review Automation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  models: read
+
+jobs:
+  review-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get PR details
+        run: |
+          gh pr view ${{ github.event.pull_request.number }} --json title --jq .title > pr_title.txt
+          gh pr view ${{ github.event.pull_request.number }} --json body --jq .body > pr_description.txt
+          gh pr diff ${{ github.event.pull_request.number }} > pr_diff.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: AI PR Review
+        run: |
+          TITLE=$(cat pr_title.txt)
+          DESC=$(cat pr_description.txt)
+          jq -n --arg title "$TITLE" --arg desc "$DESC" --rawfile diff pr_diff.txt '{
+            messages: [
+              {
+                role: "system",
+                content: "You are an expert code reviewer. Analyze the provided pull request diff and provide constructive feedback on code quality, potential bugs, security issues, and adherence to best practices. Be concise but thorough."
+              },
+              {
+                role: "user",
+                content: ("Review the following pull request diff. Provide feedback on:\n- Code quality and readability\n- Potential bugs or issues\n- Security vulnerabilities\n- Best practices compliance\n- Suggestions for improvement\n\nPull Request Title: " + $title + "\nPull Request Description: " + $desc + "\n\nDiff:\n```\n" + $diff + "\n```\n\nRespond with a structured review starting with \"PR Review:\"")
+              }
+            ],
+            model: "openai/gpt-4o",
+            temperature: 0.3
+          }' | curl -s "https://models.github.ai/inference/chat/completions" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -d @- | jq -r '.choices[0].message.content' > review.txt
+          
+          REVIEW=$(cat review.txt)
+          
+          if [ -n "$REVIEW" ]; then
+            gh pr comment ${{ github.event.pull_request.number }} --body "$REVIEW"
+          else
+            echo "No review generated"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
