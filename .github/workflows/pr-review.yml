@@ -23,41 +23,49 @@ jobs:
           PR_DESCRIPTION=$(gh pr view ${{ github.event.pull_request.number }} --json body --jq .body)
           PR_DIFF=$(gh pr diff ${{ github.event.pull_request.number }})
           
-          echo "pr_title<<EOF" >> $GITHUB_OUTPUT
-          echo "$PR_TITLE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo 'pr_title<<EOF'
+            echo "$PR_TITLE"
+            echo EOF
+          } >> $GITHUB_OUTPUT
           
-          echo "pr_description<<EOF" >> $GITHUB_OUTPUT
-          echo "$PR_DESCRIPTION" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo 'pr_description<<EOF'
+            echo "$PR_DESCRIPTION"
+            echo EOF
+          } >> $GITHUB_OUTPUT
           
-          echo "pr_diff<<EOF" >> $GITHUB_OUTPUT
-          echo "$PR_DIFF" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo 'pr_diff<<EOF'
+            echo "$PR_DIFF"
+            echo EOF
+          } >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: AI PR Review
         run: |
-          RESPONSE=$(curl -s "https://models.github.ai/inference/chat/completions" \
+          curl -s "https://models.github.ai/inference/chat/completions" \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -d '{
-              "messages": [
-                {
-                  "role": "system",
-                  "content": "You are an expert code reviewer. Analyze the provided pull request diff and provide constructive feedback on code quality, potential bugs, security issues, and adherence to best practices. Be concise but thorough."
-                },
-                {
-                  "role": "user",
-                  "content": "Review the following pull request diff. Provide feedback on:\n- Code quality and readability\n- Potential bugs or issues\n- Security vulnerabilities\n- Best practices compliance\n- Suggestions for improvement\n\nPull Request Title: '"${{ steps.pr.outputs.pr_title }}"' \nPull Request Description: '"${{ steps.pr.outputs.pr_description }}"' \n\nDiff:\n```\n'"${{ steps.pr.outputs.pr_diff }}"' \n```\n\nRespond with a structured review starting with \"PR Review:\""
-                }
-              ],
-              "model": "openai/gpt-4o",
-              "temperature": 0.3
-            }')
+            -d @- <<EOF | jq -r '.choices[0].message.content' > review.txt
+          {
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are an expert code reviewer. Analyze the provided pull request diff and provide constructive feedback on code quality, potential bugs, security issues, and adherence to best practices. Be concise but thorough."
+              },
+              {
+                "role": "user",
+                "content": "Review the following pull request diff. Provide feedback on:\n- Code quality and readability\n- Potential bugs or issues\n- Security vulnerabilities\n- Best practices compliance\n- Suggestions for improvement\n\nPull Request Title: ${{ steps.pr.outputs.pr_title }}\nPull Request Description: ${{ steps.pr.outputs.pr_description }}\n\nDiff:\n```\n${{ steps.pr.outputs.pr_diff }}\n```\n\nRespond with a structured review starting with \"PR Review:\""
+              }
+            ],
+            "model": "openai/gpt-4o",
+            "temperature": 0.3
+          }
+          EOF
           
-          REVIEW=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+          REVIEW=$(cat review.txt)
           
           gh pr comment ${{ github.event.pull_request.number }} --body "$REVIEW"
         env:
